@@ -22,7 +22,8 @@
           newPosition:{
 
           },
-          backgroundColor:''
+          backgroundColor:'',
+          clientId:''
         }
       },
       methods:{
@@ -41,7 +42,17 @@
           var b = Math.floor(Math.random() * Math.floor(255));
           this.backgroundColor = "rgb(" + r + "," + g + "," + b+ ")";          
         })
-
+        
+        this.socket.addEventListener('message',(msg)=>{
+          if(typeof(msg.data) == 'string' ){
+            console.log(msg.data)
+            console.log('its a number')
+            this.clientId = msg.data;
+            // console.log(this.clientId)
+          } else {
+            console.log('it not a num')
+          }
+        })
         this.socket.addEventListener('message',(msg)=>{
           // console.log('Server says:' + msg.data)
           if(!document.querySelector('.cursor-div')){ //append Id to this Div
