@@ -22,8 +22,7 @@
           newPosition:{
 
           },
-          backgroundColor:'',
-          clientId:''
+          backgroundColor:''
         }
       },
       methods:{
@@ -44,26 +43,15 @@
         })
         
         this.socket.addEventListener('message',(msg)=>{
-          if(typeof(msg.data) == 'string' ){
-            console.log(msg.data)
-            console.log('its a number')
-            this.clientId = msg.data;
-            // console.log(this.clientId)
-          } else {
-            console.log('it not a num')
-          }
-        })
-        this.socket.addEventListener('message',(msg)=>{
-          // console.log('Server says:' + msg.data)
-          if(!document.querySelector('.cursor-div')){ //append Id to this Div
-            var div = document.createElement('div');
-            div.classList.add('cursor-div');
-            document.querySelector('body').appendChild(div)
-          } 
-          var div = document.querySelector('.cursor-div');
-          div.style='position: absolute; top:'+ JSON.parse(msg.data).y +'px; left:'+ JSON.parse(msg.data).x +'px; background-color:'+ this.backgroundColor;
-        })
+              if(!document.querySelector('.cursor-div')){ //append Id to this Div
+                var div = document.createElement('div');
+                div.classList.add('cursor-div');
+                document.querySelector('body').appendChild(div)
+              } 
+              var div = document.querySelector('.cursor-div');
+              div.style='position: absolute; top:'+ JSON.parse(msg.data).y +'px; left:'+ JSON.parse(msg.data).x +'px; background-color:'+ this.backgroundColor;
 
+        })
         this.socket.addEventListener('close',()=>{
           console.log('You have been disconnected from the server.')
         })
