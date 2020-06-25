@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app">
+    <h1>Hi</h1>
+    <p>{{message}}</p>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+  <script>
+    var app = new Vue({
+      el:'#app',
+      data(){
+        return {
+          socket: new WebSocket('ws://localhost:3200'),
+          message: 'Hello!',
+          newPosition:{
+
+          },
+          backgroundColor:''
+        }
+      },
+      methods:{
+        cursorMove() {
+          document.addEventListener('pointermove',(e)=>{
+            console.log('move');
+          })          
+        }
+      },
+      mounted(){
+        this.socket.addEventListener('open',()=>{
+          console.log('You have connected to the server');
+          var r = Math.floor(Math.random() * Math.floor(255));
+          var g = Math.floor(Math.random() * Math.floor(255));
+          var b = Math.floor(Math.random() * Math.floor(255));
+          this.backgroundColor = "rgb(" + r + "," + g + "," + b+ ")";
+          console.log(this.backgroundColor);
+          
+        })
+
+        this.socket.addEventListener('message',(msg)=>{
+          // console.log('Server says:' + msg.data)
+          if(!document.querySelector('.cursor-div')){
+            var div = document.createElement('div');
+            div.classList.add('cursor-div');
+            document.querySelector('body').appendChild(div)
+          } 
+          var div = document.querySelector('.cursor-div');
+          div.style='position: absolute; top:'+ JSON.parse(msg.data).y +'px; left:'+ JSON.parse(msg.data).x +'px; background-color:'+ this.backgroundColor;
+        })
+
+        this.socket.addEventListener('close',()=>{
+          console.log('You have been disconnected from the server.')
+        })
+
+        document.addEventListener('pointermove',(e)=>{
+            this.newPosition.x = e.clientX - 12,
+            this.newPosition.y = e.clientY - 12;
+            this.socket.send(JSON.stringify(this.newPosition));
+        })
+      }
+    })
+  </script>
+</body>
+</html>
