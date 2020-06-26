@@ -9,24 +9,28 @@ app.listen(port, ()=>{
 app.use(express.static('./public'));
 
 var server = new ws.Server({port: 3200});
-
+var CLIENTS = [];
 server.on('connection', (client, req)=>{
-  //CLIENTS[0].close() //opet problem nastaje jer na refresh se smatra da je drugi korisnik
-  console.log('A user has connected.');
-  const ip = req.socket.remoteAddress; //mozda ovo ???
-  console.log(ip)
-  // console.log('Users on server: ' + server.clients.size);
+  CLIENTS.push(client)  
+  console.log('User ' + CLIENTS.indexOf(client) + ' has logged in.') //after 11 we 
   
-  client.on('close',()=>{
-    console.log('A user has disconnected.');
-  })
+  CLIENTS.forEach(client => {
+    client.on('close',(index)=>{
+      // console.log('A user has disconnected.');
+      console.log('User ' + CLIENTS.indexOf(client) + ' has disconnected.');
+      }).setMaxListeners(0)  
+    }
+  )
 
-  client.on('message',(msg)=>{ 
-    // console.log('Client says ' + msg);
-    // console.log('Sending client: ' + msg)
-    client.send(msg);
-    server.clients.forEach( client =>{
-      client.send(msg)
+  client.on('message',(msg)=>{
+    var newMsg = msg.slice(0,-1,0)
+    newMsg = newMsg +  ', "id":' + CLIENTS.indexOf(client) +'}';
+
+    console.log('Client ' + CLIENTS.indexOf(client) + ' says: ' + msg)
+    console.log('Sending Clients: ' + newMsg)
+    // client.send(newMsg); //ovo ce samo poslati jednom
+    server.clients.forEach(client =>{ //ovo salje svima
+      client.send(newMsg)
     })
   })
 

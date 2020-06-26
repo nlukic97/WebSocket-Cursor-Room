@@ -39,16 +39,21 @@
           var r = Math.floor(Math.random() * Math.floor(255));
           var g = Math.floor(Math.random() * Math.floor(255));
           var b = Math.floor(Math.random() * Math.floor(255));
-          this.backgroundColor = "rgb(" + r + "," + g + "," + b+ ")";          
+          this.backgroundColor = "rgb(" + r + "," + g + "," + b+ ")";  //ovo bi valjalo sa server strane da se desi. Jer svakom klijentu je ista boja svih kruzica.
         })
         
+        //mozda forEach ovde za sve sockete
         this.socket.addEventListener('message',(msg)=>{
-              if(!document.querySelector('.cursor-div')){ //append Id to this Div
+          var id = JSON.parse(msg.data).id;
+          console.log(id)
+
+              if(!document.querySelector('#div-'+id)){ //append Id to this Div
                 var div = document.createElement('div');
                 div.classList.add('cursor-div');
+                div.setAttribute('id','div-'+id)
                 document.querySelector('body').appendChild(div)
               } 
-              var div = document.querySelector('.cursor-div');
+              var div = document.querySelector('#div-'+id);
               div.style='position: absolute; top:'+ JSON.parse(msg.data).y +'px; left:'+ JSON.parse(msg.data).x +'px; background-color:'+ this.backgroundColor;
 
         })
