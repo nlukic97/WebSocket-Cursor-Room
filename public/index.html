@@ -39,25 +39,21 @@
         })
         
         this.socket.addEventListener('message',(msg)=>{
-          this.id = JSON.parse(msg.data).id;
-          console.log(this.id)
-          
-              //nekakva provera da filtrira poruku. Ako ima id neceg sto zelimo obrisati, obrisi. Ako nema, onda animacija i ovo ispod. Ali iz nekog razloga ne moze da procita poruku koja se nalazi u serveru pod var removeId.
-
-              // if(JSON.parse(msg.data).removeId) {
-              //   console.log(JSON.parse(msg.data).removeId + ' should be gone!')
-              // } else {
-              //   console.log('Nothign should be removed.')
-              // }
-
-              if(!document.querySelector('#div-'+ this.id)){
-                var div = document.createElement('div');
-                div.classList.add('cursor-div');
-                div.setAttribute('id','div-'+this.id)
-                document.querySelector('body').appendChild(div)
-              } 
-              var div = document.querySelector('#div-'+this.id);
-              div.style='position: absolute; top:'+ JSON.parse(msg.data).y +'px; left:'+ JSON.parse(msg.data).x +'px; background-color:'+ JSON.parse(msg.data).backgroundColor;
+          if(JSON.parse(msg.data).removeId){
+            console.log('User number: ' + JSON.parse(msg.data).removeId + ' has left. Removing div-' + JSON.parse(msg.data).removeId);
+            var removeDiv = document.querySelector('#div-'+JSON.parse(msg.data).removeId);
+            removeDiv.parentNode.removeChild(removeDiv);
+          } else {
+            this.id = JSON.parse(msg.data).id;
+            if(!document.querySelector('#div-'+ this.id)){
+              var div = document.createElement('div');
+              div.classList.add('cursor-div');
+              div.setAttribute('id','div-'+this.id)
+              document.querySelector('body').appendChild(div)
+            } 
+            var div = document.querySelector('#div-'+this.id);
+            div.style='position: absolute; top:'+ JSON.parse(msg.data).y +'px; left:'+ JSON.parse(msg.data).x +'px; background-color:'+ JSON.parse(msg.data).backgroundColor;
+          }
 
         })
         this.socket.addEventListener('close',()=>{

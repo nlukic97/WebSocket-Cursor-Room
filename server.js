@@ -20,24 +20,17 @@ server.on('connection', (client, req)=>{
   client.backgroundColor = "rgb(" + r + "," + g + "," + b+ ")";
   console.log(client.backgroundColor);
 
-  CLIENTS.forEach(client => {
-    client.on('close',(index)=>{
-      console.log('User ' + CLIENTS.indexOf(client) + ' has disconnected.');
+  client.on('close',(index)=>{
+    console.log('User ' + CLIENTS.indexOf(client) + ' has disconnected.');
+   
+    var removeId = '{"removeId":' + CLIENTS.indexOf(client) + '}';
+    console.log("Sending all clients: '"+removeId+"'");
 
-      ///////////////////////////////////////////////////////   <--- kako da posaljem id, pa da taj div uklonim?
-      
-      // var removeId = '{"removeId":' + CLIENTS.indexOf(client) + '}'
-      // console.log("Sending all clients: '"+removeId+"'")
+      server.clients.forEach(remainingClient =>{
+        remainingClient.send(removeId)
+      })
+    }).setMaxListeners(0)
 
-      //   server.clients.forEach(remainingClient =>{
-      //     remainingClient.send(this.removeId)
-      //   })
-
-        ///////////////////////////////////////////////////////
-      }).setMaxListeners(0)
-
-    }
-  )
 
   client.on('message',(msg)=>{
     var newMsg = msg.slice(0,-1,0)
@@ -45,7 +38,7 @@ server.on('connection', (client, req)=>{
 
     console.log('Client ' + CLIENTS.indexOf(client) + ' says: ' + msg)
     console.log('Sending Clients: ' + newMsg)
-    server.clients.forEach(client =>{ //ovo salje svima
+    server.clients.forEach(client =>{
       client.send(newMsg)
     })
   })
