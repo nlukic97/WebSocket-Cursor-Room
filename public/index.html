@@ -19,6 +19,7 @@
         return {
           socket: new WebSocket('ws://localhost:3200'),
           message: 'Hello!',
+          id:'',
           newPosition:{
 
           },
@@ -35,26 +36,28 @@
       mounted(){
         this.socket.addEventListener('open',()=>{
           console.log('You have connected to the server');
-
-          var r = Math.floor(Math.random() * Math.floor(255));
-          var g = Math.floor(Math.random() * Math.floor(255));
-          var b = Math.floor(Math.random() * Math.floor(255));
-          this.backgroundColor = "rgb(" + r + "," + g + "," + b+ ")";  //ovo bi valjalo sa server strane da se desi. Jer svakom klijentu je ista boja svih kruzica.
         })
         
-        //mozda forEach ovde za sve sockete
         this.socket.addEventListener('message',(msg)=>{
-          var id = JSON.parse(msg.data).id;
-          console.log(id)
+          this.id = JSON.parse(msg.data).id;
+          console.log(this.id)
+          
+              //nekakva provera da filtrira poruku. Ako ima id neceg sto zelimo obrisati, obrisi. Ako nema, onda animacija i ovo ispod. Ali iz nekog razloga ne moze da procita poruku koja se nalazi u serveru pod var removeId.
 
-              if(!document.querySelector('#div-'+id)){ //append Id to this Div
+              // if(JSON.parse(msg.data).removeId) {
+              //   console.log(JSON.parse(msg.data).removeId + ' should be gone!')
+              // } else {
+              //   console.log('Nothign should be removed.')
+              // }
+
+              if(!document.querySelector('#div-'+ this.id)){
                 var div = document.createElement('div');
                 div.classList.add('cursor-div');
-                div.setAttribute('id','div-'+id)
+                div.setAttribute('id','div-'+this.id)
                 document.querySelector('body').appendChild(div)
               } 
-              var div = document.querySelector('#div-'+id);
-              div.style='position: absolute; top:'+ JSON.parse(msg.data).y +'px; left:'+ JSON.parse(msg.data).x +'px; background-color:'+ this.backgroundColor;
+              var div = document.querySelector('#div-'+this.id);
+              div.style='position: absolute; top:'+ JSON.parse(msg.data).y +'px; left:'+ JSON.parse(msg.data).x +'px; background-color:'+ JSON.parse(msg.data).backgroundColor;
 
         })
         this.socket.addEventListener('close',()=>{
@@ -65,7 +68,6 @@
             this.newPosition.x = e.clientX - 12,
             this.newPosition.y = e.clientY - 12;
             this.socket.send(JSON.stringify(this.newPosition));
-            //maybe i should send the client id, which will also be the aditional number in the class of the div created?
         })
       }
     })
