@@ -18,13 +18,13 @@ server.on('connection', (client, req)=>{
   var g = Math.floor(Math.random() * Math.floor(255));
   var b = Math.floor(Math.random() * Math.floor(255));
   client.backgroundColor = "rgb(" + r + "," + g + "," + b+ ")";
-  console.log(client.backgroundColor);
+  // console.log(client.backgroundColor);
 
   client.on('close',(index)=>{
     console.log('User ' + CLIENTS.indexOf(client) + ' has disconnected.');
    
     var removeId = '{"removeId":' + CLIENTS.indexOf(client) + '}';
-    console.log("Sending all clients: '"+removeId+"'");
+    // console.log("Sending all clients: '"+removeId+"'");
 
       server.clients.forEach(remainingClient =>{
         remainingClient.send(removeId)
@@ -36,8 +36,8 @@ server.on('connection', (client, req)=>{
     var newMsg = msg.slice(0,-1,0)
     newMsg = newMsg +  ', "id":' + CLIENTS.indexOf(client) + ',"backgroundColor":'+ '"' +  client.backgroundColor + '"' +'}';
 
-    console.log('Client ' + CLIENTS.indexOf(client) + ' says: ' + msg)
-    console.log('Sending Clients: ' + newMsg)
+    // console.log('Client ' + CLIENTS.indexOf(client) + ' says: ' + msg)
+    // console.log('Sending Clients: ' + newMsg)
     server.clients.forEach(client =>{
       client.send(newMsg)
     })
