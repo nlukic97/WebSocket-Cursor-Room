@@ -10,6 +10,12 @@ app.listen(port, ()=> console.log('Served at http://localhost:' + port))
 const CLIENTS = [];
 var index = 0;
 
+const TYPE = {
+  NEW_MOVEMENT:"NEW_MOVEMENT",
+  UPDATE_COORDS:"UPDATE_COORDS",
+  REMOVE_CIRCLE:"REMOVE_CIRCLE"
+}
+
 /* Creating a Websocket server */
 const server = new ws.Server({port: 3200});
 
@@ -28,23 +34,40 @@ server.on('connection', (client)=>{
 
   client.on('close',function(){
     console.log('Client ' + this.index + ' has disconnected.');
-   
-    var removeId = '{"removeId":' + this.index + '}';
+    CLIENTS.splice(client.index, 1)
+
+    const payload = createMessage(TYPE.REMOVE_CIRCLE,{id: client.index})
 
     server.clients.forEach(remainingClient =>{
-      remainingClient.send(removeId)
+      remainingClient.send(payload)
     })
-  }).setMaxListeners(0)
+  }).setMaxListeners(0) // TODO confirm why I disabled memory leak feature with this
 
 
-  client.on('message',function(msg){
-    var newMsg = msg.slice(0,-1,0)
-    newMsg = newMsg +  ', "id":' + this.index + ',"backgroundColor":'+ '"' +  client.backgroundColor + '"' +'}';
+  client.on('message',function(payload){
+   const msg = JSON.parse(payload)
 
-    server.clients.forEach(client =>{
-      client.send(newMsg)
-    })
+    switch(msg.type){
+      case TYPE.NEW_MOVEMENT:
+
+        const newPayload = createMessage(TYPE.UPDATE_COORDS,
+          {
+            ...msg.data, 
+            id: client.index, 
+            backgroundColor: client.backgroundColor
+          }
+        )        
+
+        server.clients.forEach(client=>{
+          client.send(newPayload)
+        })
+        break;
+    }
+    
   })
 
-  
 })
+
+function createMessage(type,data){
+  return JSON.stringify({type,data})
+}

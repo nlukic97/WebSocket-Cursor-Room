@@ -8,68 +8,82 @@
   <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
 </head>
 <body>
-
+  
   <div id="app">
     <h1>Hi</h1>
     <p>{{message}}</p>
   </div>
-
+  
   <script>
     var app = new Vue({
       el:'#app',
       data(){
         return {
           socket: new WebSocket('ws://localhost:3200'),
-          message: 'Hello!',
-          id:'',
-          newPosition:{},
-          backgroundColor:''
+          message: 'Try to move the cursor around. Open this in a new browser window, or on multiple laptops for the best effect!',
+          TYPE:{
+            NEW_MOVEMENT:"NEW_MOVEMENT",
+            UPDATE_COORDS:"UPDATE_COORDS",
+            REMOVE_CIRCLE:"REMOVE_CIRCLE"
+          }
         }
       },
       methods:{
-        cursorMove() {
-          document.addEventListener('pointermove',(e)=>{
-            console.log('move');
-          })          
-        },
-
-        removeClient(){}
+        createMessage:function(type,data){
+          return JSON.stringify({type,data})
+        }
       },
       mounted(){
         this.socket.addEventListener('open',()=>{
           console.log('You have connected to the server');
         })
         
-        this.socket.addEventListener('message',({data})=>{
-          const msg = JSON.parse(data)
-
-          if(msg.removeId){
-            console.log('User number: ' + msg.removeId + ' has left. Removing div-' + msg.removeId);
-            var removeDiv = document.querySelector('#div-'+msg.removeId);
-            removeDiv.parentNode.removeChild(removeDiv);
-          } else 
-          {
-            this.id = msg.id;
-            if(!document.querySelector('#div-'+ this.id)){
-              var div = document.createElement('div');
-              div.classList.add('cursor-div');
-              div.setAttribute('id','div-'+this.id)
-              document.querySelector('body').appendChild(div)
-            } 
-            var div = document.querySelector('#div-'+this.id);
-            div.style='position: absolute; top:'+ msg.y +'px; left:'+ msg.x +'px; background-color:'+ msg.backgroundColor;
+        this.socket.addEventListener('message',(payload)=>{
+          const msg = JSON.parse(payload.data)
+          const data = msg.data;
+          
+          switch(msg.type){
+            case this.TYPE.UPDATE_COORDS:
+              // in case the element has not been created, create and add to body
+              if(!document.querySelector(`#div-${data.id}`)){
+                const div = document.createElement('div');
+                div.classList.add('cursor-div');
+                div.setAttribute('id',`div-${data.id}`)
+                document.querySelector('body').appendChild(div)
+              }
+              
+              // select this element and update its position
+              document.querySelector(`#div-${data.id}`).style=`
+              position: absolute; 
+              top:${data.y}px; 
+              left:${data.x}px; 
+              background-color:${data.backgroundColor};`;  
+              break;
+            
+            
+            case this.TYPE.REMOVE_CIRCLE:
+              // remove div for client id who has just left
+              const div = document.querySelector(`#div-${data.id}`)
+              if(div) div.remove()
+              break;
+            
+            default:
+              console.log('unrecognized message')
+              break;
           }
-
         })
-
+        
         this.socket.addEventListener('close',()=>{
           console.log('You have been disconnected from the server.')
         })
-
+        
         document.addEventListener('pointermove',(e)=>{
-            this.newPosition.x = e.clientX - 12,
-            this.newPosition.y = e.clientY - 12;
-            this.socket.send(JSON.stringify(this.newPosition));
+          const data = {
+            x: e.clientX - 12,
+            y: e.clientY - 12
+          }
+          const payload = this.createMessage(this.TYPE.NEW_MOVEMENT, data)
+          this.socket.send(payload)
         })
       }
     })
