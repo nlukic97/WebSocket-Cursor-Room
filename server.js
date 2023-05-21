@@ -3,41 +3,44 @@ var app = express();
 var ws = require('ws');
 var port = 3000;
 
-app.listen(port, ()=>{
-  console.log('Served on port: ' + port);
-})
+/* Creating a HTTP server to serve index.html */
 app.use(express.static('./public'));
+app.listen(port, ()=> console.log('Served at http://localhost:' + port))
 
-var server = new ws.Server({port: 3200});
-var CLIENTS = [];
-server.on('connection', (client, req)=>{
-  CLIENTS.push(client)  
-  console.log('User ' + CLIENTS.indexOf(client) + ' has logged in.')
+const CLIENTS = [];
+var index = 0;
+
+/* Creating a Websocket server */
+const server = new ws.Server({port: 3200});
+
+server.on('connection', (client)=>{
+  client.index = index;
+  index++;
+
+  CLIENTS.push(client)
+  console.log('User ' + client.index + ' has logged in.')
   
-  var r = Math.floor(Math.random() * Math.floor(255));
-  var g = Math.floor(Math.random() * Math.floor(255));
-  var b = Math.floor(Math.random() * Math.floor(255));
+  const r = Math.floor(Math.random() * Math.floor(255));
+  const g = Math.floor(Math.random() * Math.floor(255));
+  const b = Math.floor(Math.random() * Math.floor(255));
+
   client.backgroundColor = "rgb(" + r + "," + g + "," + b+ ")";
-  // console.log(client.backgroundColor);
 
-  client.on('close',(index)=>{
-    console.log('User ' + CLIENTS.indexOf(client) + ' has disconnected.');
+  client.on('close',function(){
+    console.log('Client ' + this.index + ' has disconnected.');
    
-    var removeId = '{"removeId":' + CLIENTS.indexOf(client) + '}';
-    // console.log("Sending all clients: '"+removeId+"'");
+    var removeId = '{"removeId":' + this.index + '}';
 
-      server.clients.forEach(remainingClient =>{
-        remainingClient.send(removeId)
-      })
-    }).setMaxListeners(0)
+    server.clients.forEach(remainingClient =>{
+      remainingClient.send(removeId)
+    })
+  }).setMaxListeners(0)
 
 
-  client.on('message',(msg)=>{
+  client.on('message',function(msg){
     var newMsg = msg.slice(0,-1,0)
-    newMsg = newMsg +  ', "id":' + CLIENTS.indexOf(client) + ',"backgroundColor":'+ '"' +  client.backgroundColor + '"' +'}';
+    newMsg = newMsg +  ', "id":' + this.index + ',"backgroundColor":'+ '"' +  client.backgroundColor + '"' +'}';
 
-    // console.log('Client ' + CLIENTS.indexOf(client) + ' says: ' + msg)
-    // console.log('Sending Clients: ' + newMsg)
     server.clients.forEach(client =>{
       client.send(newMsg)
     })

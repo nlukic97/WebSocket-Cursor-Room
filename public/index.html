@@ -5,13 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Document</title>
   <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
 </head>
 <body>
+
   <div id="app">
     <h1>Hi</h1>
     <p>{{message}}</p>
   </div>
-  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
   <script>
     var app = new Vue({
       el:'#app',
@@ -20,9 +22,7 @@
           socket: new WebSocket('ws://localhost:3200'),
           message: 'Hello!',
           id:'',
-          newPosition:{
-
-          },
+          newPosition:{},
           backgroundColor:''
         }
       },
@@ -31,20 +31,25 @@
           document.addEventListener('pointermove',(e)=>{
             console.log('move');
           })          
-        }
+        },
+
+        removeClient(){}
       },
       mounted(){
         this.socket.addEventListener('open',()=>{
           console.log('You have connected to the server');
         })
         
-        this.socket.addEventListener('message',(msg)=>{
-          if(JSON.parse(msg.data).removeId){
-            console.log('User number: ' + JSON.parse(msg.data).removeId + ' has left. Removing div-' + JSON.parse(msg.data).removeId);
-            var removeDiv = document.querySelector('#div-'+JSON.parse(msg.data).removeId);
+        this.socket.addEventListener('message',({data})=>{
+          const msg = JSON.parse(data)
+
+          if(msg.removeId){
+            console.log('User number: ' + msg.removeId + ' has left. Removing div-' + msg.removeId);
+            var removeDiv = document.querySelector('#div-'+msg.removeId);
             removeDiv.parentNode.removeChild(removeDiv);
-          } else {
-            this.id = JSON.parse(msg.data).id;
+          } else 
+          {
+            this.id = msg.id;
             if(!document.querySelector('#div-'+ this.id)){
               var div = document.createElement('div');
               div.classList.add('cursor-div');
@@ -52,10 +57,11 @@
               document.querySelector('body').appendChild(div)
             } 
             var div = document.querySelector('#div-'+this.id);
-            div.style='position: absolute; top:'+ JSON.parse(msg.data).y +'px; left:'+ JSON.parse(msg.data).x +'px; background-color:'+ JSON.parse(msg.data).backgroundColor;
+            div.style='position: absolute; top:'+ msg.y +'px; left:'+ msg.x +'px; background-color:'+ msg.backgroundColor;
           }
 
         })
+
         this.socket.addEventListener('close',()=>{
           console.log('You have been disconnected from the server.')
         })
