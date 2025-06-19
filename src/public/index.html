@@ -30,7 +30,7 @@
         }
       },
       methods:{
-        init: async function(cb){
+        init: async function(){
           try {
             const response = await fetch('/api/ports')
             const {WS_PORT} = await response.json()
@@ -42,7 +42,7 @@
               this.setupEventListeners()
             });
           } catch(e){
-            
+            console.error(e)
           }
         },
 
@@ -52,8 +52,8 @@
 
         setupEventListeners: async function(){
           this.socket.addEventListener('message', this.handleReceivedMessage)
-          this.socket.addEventListener('close',()=> console.log('You have been disconnected from the server.'))
           document.addEventListener('pointermove', this.broadcastCursorPosition)
+          this.socket.addEventListener('close',()=> console.log('You have been disconnected from the server.'))
         },
 
         handleReceivedMessage(payload) {
@@ -85,11 +85,6 @@
           this.socket.send(payload)
         },
 
-        removeCursor(id) {
-          const div = document.querySelector(`#div-${id}`)
-          if (div) div.remove()
-        },
-
         insertCursor(data) {
           // in case the element has not been created, create and add to body
           if (!document.querySelector(`#div-${data.id}`)) {
@@ -105,7 +100,13 @@
             left: ${data.x}px; 
             background-color: ${data.cursorColor};
           `;
-        }
+        },
+
+        removeCursor(id) {
+          const div = document.querySelector(`#div-${id}`)
+          if (div) div.remove()
+        },
+      
       },
       
       mounted: function(){
