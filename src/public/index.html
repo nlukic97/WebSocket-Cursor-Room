@@ -30,10 +30,7 @@
         }
       },
       methods:{
-        createMessage:function(type,data){
-          return JSON.stringify({type,data})
-        },
-        connectToWebsocketServer: async function(cb){
+        init: async function(cb){
           try {
             const response = await fetch('/api/ports')
             const {WS_PORT} = await response.json()
@@ -42,63 +39,77 @@
             
             this.socket.addEventListener('open', () => {
               console.log('You have connected to the websocket server');
-              this.initListeners()
+              this.setupEventListeners()
             });
           } catch(e){
             
           }
         },
-        initListeners: async function(){          
-          this.socket.addEventListener('message',(payload)=>{
-            const msg = JSON.parse(payload.data)
-            const data = msg.data;
+
+        createMessage:function(type,data){
+          return JSON.stringify({type,data})
+        },
+
+        setupEventListeners: async function(){
+          this.socket.addEventListener('message', this.handleReceivedMessage)
+          this.socket.addEventListener('close',()=> console.log('You have been disconnected from the server.'))
+          document.addEventListener('pointermove', this.broadcastCursorPosition)
+        },
+
+        handleReceivedMessage(payload) {
+          const msg = JSON.parse(payload.data)
+          const data = msg.data;
+          
+          switch(msg.type){
+            case this.TYPE.UPDATE_COORDS:
+              this.insertCursor(data)
+              break;
             
-            switch(msg.type){
-              case this.TYPE.UPDATE_COORDS:
-                // in case the element has not been created, create and add to body
-                if(!document.querySelector(`#div-${data.id}`)){
-                  const div = document.createElement('div');
-                  div.classList.add('cursor-div');
-                  div.setAttribute('id',`div-${data.id}`)
-                  document.querySelector('body').appendChild(div)
-                }
-                // select this element and update its position
-                document.querySelector(`#div-${data.id}`).style=`
-                position: absolute; 
-                top:${data.y}px; 
-                left:${data.x}px; 
-                background-color:${data.cursorColor};`;  
-                break;
-              
-              
-              case this.TYPE.REMOVE_CIRCLE:
-                // remove div for client id who has just left
-                const div = document.querySelector(`#div-${data.id}`)
-                if(div) div.remove()
-                break;
-              
-              default:
-                console.log('unrecognized message')
-                break;
-            }
+            case this.TYPE.REMOVE_CIRCLE:
+              // remove div for client id who has just left
+              this.removeCursor(data.id)
+              break;
+            
+            default:
+              console.log('unrecognized message')
+              break;
+          }
+        },
+
+        broadcastCursorPosition(e) {
+          if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return;
+          const payload = this.createMessage(this.TYPE.NEW_MOVEMENT, {
+            x: e.clientX - 12,
+            y: e.clientY - 12
           })
-          
-          this.socket.addEventListener('close',()=>{
-            console.log('You have been disconnected from the server.')
-          })
-          
-          document.addEventListener('pointermove',(e)=>{
-            if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return;
-            const payload = this.createMessage(this.TYPE.NEW_MOVEMENT, {
-              x: e.clientX - 12,
-              y: e.clientY - 12
-            })
-            this.socket.send(payload)
-          })
+          this.socket.send(payload)
+        },
+
+        removeCursor(id) {
+          const div = document.querySelector(`#div-${id}`)
+          if (div) div.remove()
+        },
+
+        insertCursor(data) {
+          // in case the element has not been created, create and add to body
+          if (!document.querySelector(`#div-${data.id}`)) {
+            const div = document.createElement('div');
+            div.classList.add('cursor-div');
+            div.setAttribute('id', `div-${data.id}`);
+            document.querySelector('body').appendChild(div);
+          }
+          // select this element and update its position
+          document.querySelector(`#div-${data.id}`).style = `
+            position: absolute; 
+            top: ${data.y}px; 
+            left: ${data.x}px; 
+            background-color: ${data.cursorColor};
+          `;
         }
       },
+      
       mounted: function(){
-        this.connectToWebsocketServer()
+        this.init()
       }
     })
     </script>
