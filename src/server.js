@@ -18,9 +18,9 @@ app.listen(PORT, ()=> console.log('Served at http://localhost:' + PORT))
 let index = 0;
 
 const TYPE = {
-  NEW_MOVEMENT:"NEW_MOVEMENT", // event client sends to server when they move their cursor
-  UPDATE_COORDS:"UPDATE_COORDS", // event server sends other clients to adjust specific cursor position
-  REMOVE_CIRCLE:"REMOVE_CIRCLE" // event server sends to remaining clients if a client leaves
+  NEW_MOVEMENT: "NEW_MOVEMENT", // event client sends to server when they move their cursor
+  UPDATE_COORDS: "UPDATE_COORDS", // event server sends other clients to adjust specific cursor position
+  REMOVE_CIRCLE: "REMOVE_CIRCLE" // event server sends to remaining clients if a client leaves
 }
 
 
@@ -78,13 +78,13 @@ function handleClientExit(){
 // Create a new WebSocket server instance listening on the specified port
 const server = new ws.Server({port: WS_PORT || 3200});
 
-server.on('listening',()=> console.log('Websocket server is listening on port ' + WS_PORT))
+server.on('listening',()=> console.log(`Websocket server is listening on port ${WS_PORT}`))
 
 server.on('connection', (client)=>{
   // determining user's cursor color, and uniqueid
   client.cursorColor = generateRandomRgbColor()
   client.index = index;
-  console.log('User ' + client.index + ' has entered the room.')
+  console.log(`User ${client.index} has entered the room.`)
   index++;
   
   // clien event listeners
