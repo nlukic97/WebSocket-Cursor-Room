@@ -1,9 +1,16 @@
-const express = require('express');
-const app = express();
-const ws = require('ws');
-require('dotenv').config()
+import express from "express";
+import ws from "ws";
 
-const { createMessage, generateRandomRgbColor } = require('./utils/utils');
+import dotenv from "dotenv";
+dotenv.config()
+
+import path from "path";
+import { fileURLToPath } from 'url';
+import { createMessage, generateRandomRgbColor } from './utils/utils.js'
+
+
+const app = express();
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Defining http and ws port
 const PORT = process.env.PORT || 3000;
@@ -11,7 +18,7 @@ const WS_PORT = process.env.WS_PORT || 3200;
 
 
 /* Creating a HTTP server to serve index.html */
-app.use(express.static(require('path').join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname,'public')));
 app.listen(PORT, ()=> console.log('Served at http://localhost:' + PORT))
 
 // Auto incrementing id assigned to joining clients

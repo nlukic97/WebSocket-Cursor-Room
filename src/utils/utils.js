@@ -7,7 +7,7 @@
 * - @param {Object} data - The payload to be sent with the message.
 * - @returns {string} - A JSON string containing the type and data.
 */
-function createMessage(type, data) {
+export function createMessage(type, data) {
   return JSON.stringify({ type, data });
 }
 
@@ -19,16 +19,10 @@ function createMessage(type, data) {
 * - Each color component (r, g, b) is an integer from 0 and 221.
 * - @returns {string} - A string representing the random RGB color.
 */
-function generateRandomRgbColor() {
+export function generateRandomRgbColor() {
   const r = Math.floor(Math.random() * 221);
   const g = Math.floor(Math.random() * 221);
   const b = Math.floor(Math.random() * 221);
 
   return "rgb(" + r + "," + g + "," + b + ")";
 }
-
-
-module.exports = {
-  createMessage,
-  generateRandomRgbColor
-};
