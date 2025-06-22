@@ -1,6 +1,5 @@
 import express from "express";
 import ws from "ws";
-
 import dotenv from "dotenv";
 dotenv.config();
 import path from "path";
@@ -100,3 +99,6 @@ server.on("connection", (client) => {
 
 // API route to get port info
 app.get("/api/ports", (_, res) => res.json({ PORT, WS_PORT }));
+
+// 404 route
+app.get(/.*/, (req, res) => res.sendStatus(404));
