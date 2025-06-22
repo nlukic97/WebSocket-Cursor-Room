@@ -87,10 +87,9 @@ server.on('connection', (client)=>{
   console.log('User ' + client.index + ' has entered the room.')
   index++;
   
-  
+  // clien event listeners
   client.on('message', (payload) => handleClientMessage(payload, client))
-  
-  client.on('close',handleClientExit).setMaxListeners(0) // TODO confirm why I disabled memory leak feature with this
+  client.on('close', handleClientExit);
 })
 
 // Express server to serve API route for frontend to check ports
