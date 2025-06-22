@@ -2,20 +2,33 @@
   "name": "cursor-room-websockets",
   "version": "1.0.0",
   "description": "",
-  "main": "server.js",
+  "main": "./src/server.js",
+  "type": "module",
   "scripts": {
-    "serve": "nodemon server.js"
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js",
+    "eslint": "npx eslint .",
+    "eslint:fix": "npx eslint . --fix",
+    "prettier": "npx prettier . --check",
+    "prettier:fix": "npx prettier . --write"
   },
   "engines": {
-    "node": "14.0.0"
+    "node": "22.13.1"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "express": "^4.17.1",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "vue": "^3.5.17",
     "ws": "^7.3.0"
   },
   "devDependencies": {
-    "nodemon": "^2.0.4"
+    "@eslint/js": "^9.29.0",
+    "eslint": "^9.29.0",
+    "eslint-config-prettier": "^10.1.5",
+    "globals": "^16.2.0",
+    "nodemon": "^3.1.10",
+    "prettier": "3.5.3"
   }
 }
