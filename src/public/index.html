@@ -1,156 +1,166 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
-  <link rel="stylesheet" href="css/style.css">
-  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
-</head>
-<body>
-  
-  <div id="app">
-    <h1>Hi</h1>
-    <p>{{message}}</p>
-  </div>
-  
-  <script>
-    const app = new Vue({
-      el:'#app',
-      data(){
-        return {
-          WS_PORT:undefined,
-          socket: undefined,
-          message: 'Try to move the cursor around. Open this in a new browser window, or on multiple laptops for the best effect!',
-          TYPE:{
-            NEW_MOVEMENT:"NEW_MOVEMENT",
-            UPDATE_COORDS:"UPDATE_COORDS",
-            REMOVE_CIRCLE:"REMOVE_CIRCLE"
-          }
-        }
-      },
-      methods:{
-        /**
-         * Initializes the application
-         * - Retrieves the websocket port from the server and initializes the websocket connection, 
-         * and sets up websocket event listeners when connection is open.
-         */
-        init: async function(){
-          try {
-            const response = await fetch('/api/ports')
-            const {WS_PORT} = await response.json()
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+  </head>
+  <body>
+    <div id="app">
+      <h1>Hi</h1>
+      <p>{{message}}</p>
+    </div>
 
-            this.socket = new WebSocket('ws://localhost:' + WS_PORT)
-            
-            this.socket.addEventListener('open', () => {
-              console.log('You have connected to the websocket server');
-              this.setupEventListeners()
+    <script>
+      const app = new Vue({
+        el: "#app",
+        data() {
+          return {
+            WS_PORT: undefined,
+            socket: undefined,
+            message:
+              "Try to move the cursor around. Open this in a new browser window, or on multiple laptops for the best effect!",
+            TYPE: {
+              NEW_MOVEMENT: "NEW_MOVEMENT",
+              UPDATE_COORDS: "UPDATE_COORDS",
+              REMOVE_CIRCLE: "REMOVE_CIRCLE",
+            },
+          };
+        },
+        methods: {
+          /**
+           * Initializes the application
+           * - Retrieves the websocket port from the server and initializes the websocket connection,
+           * and sets up websocket event listeners when connection is open.
+           */
+          init: async function () {
+            try {
+              const response = await fetch("/api/ports");
+              const { WS_PORT } = await response.json();
+
+              this.socket = new WebSocket("ws://localhost:" + WS_PORT);
+
+              this.socket.addEventListener("open", () => {
+                console.log("You have connected to the websocket server");
+                this.setupEventListeners();
+              });
+            } catch (e) {
+              console.error(e);
+            }
+          },
+
+          /**
+           * Sets up event listeners for real-time cursor sharing:
+           * - Adds a 'message' event listener to the WebSocket to process messages from the server.
+           * - Adds a 'pointermove' event listener to the document to send the user's cursor position to the server.
+           * - Adds a 'close' event listener to the WebSocket to notify when the connection is closed.
+           */
+          setupEventListeners: async function () {
+            this.socket.addEventListener("message", this.handleReceivedMessage);
+            document.addEventListener(
+              "pointermove",
+              this.broadcastCursorPosition
+            );
+            this.socket.addEventListener("close", () =>
+              console.log("You have been disconnected from the server.")
+            );
+          },
+
+          /**
+           * Creates a JSON stringified message object to be sent over the WebSocket.
+           * @param {string} type - The type of the message (e.g., NEW_MOVEMENT, UPDATE_COORDS, REMOVE_CIRCLE).
+           * @param {Object} data - The data payload to include in the message.
+           * @returns {string} - The JSON stringified message.
+           */
+          createMessage: function (type, data) {
+            return JSON.stringify({ type, data });
+          },
+
+          /**
+           * Handles incoming messages from the WebSocket server.
+           * Parses the message payload and performs actions based on the message type:
+           * - UPDATE_COORDS: Inserts or updates the cursor position and color for a user.
+           * - REMOVE_CIRCLE: Removes the cursor element for a user who has left.
+           * - Default: Logs unrecognized message types.
+           * @param {MessageEvent} payload - The message event containing data from the server.
+           */
+          handleReceivedMessage(payload) {
+            const msg = JSON.parse(payload.data);
+            const data = msg.data;
+
+            switch (msg.type) {
+              case this.TYPE.UPDATE_COORDS:
+                this.updateCursorPosition(
+                  data.id,
+                  data.x,
+                  data.y,
+                  data.cursorColor
+                );
+                break;
+
+              case this.TYPE.REMOVE_CIRCLE:
+                this.removeCursor(data.id);
+                break;
+
+              default:
+                console.log("Unrecognized message");
+                break;
+            }
+          },
+
+          /**
+           * Broadcasts the user's current cursor position to the server via WebSocket.
+           * Sends a message of type NEW_MOVEMENT with the adjusted x and y coordinates
+           * only if the WebSocket connection is open.
+           * @param {PointerEvent} e - The pointer event containing the cursor's position.
+           */
+          broadcastCursorPosition(e) {
+            if (!this.socket || this.socket.readyState !== WebSocket.OPEN)
+              return;
+            const payload = this.createMessage(this.TYPE.NEW_MOVEMENT, {
+              x: e.clientX - 12,
+              y: e.clientY - 12,
             });
-          } catch(e){
-            console.error(e)
-          }
+            this.socket.send(payload);
+          },
+
+          /**
+           * Inserts and updates a cursor element on the page for a given user.
+           * If the cursor element for the user does not exist, it creates a new div and appends it to the body.
+           * Then, it updates the position and color of the cursor based on the provided data.
+           * @param {Object} data - The cursor data containing id, x, y, and cursorColor.
+           */
+          updateCursorPosition(id, x, y, color) {
+            if (!document.querySelector(`#div-${id}`)) {
+              const div = document.createElement("div");
+              div.classList.add("cursor-div");
+              div.setAttribute("id", `div-${id}`);
+              div.style.position = "absolute";
+              div.style.backgroundColor = color;
+              document.querySelector("body").appendChild(div);
+            }
+            // position update
+            document.querySelector(`#div-${id}`).style.top = `${y}px`;
+            document.querySelector(`#div-${id}`).style.left = `${x}px`;
+          },
+
+          /**
+           * Removes the cursor element associated with the given user id from the DOM.
+           * If the cursor element exists, it is removed; otherwise, no action is taken.
+           * @param {string} id - The unique identifier for the user's cursor to remove.
+           */
+          removeCursor(id) {
+            const div = document.querySelector(`#div-${id}`);
+            if (div) div.remove();
+          },
         },
 
-        /**
-         * Sets up event listeners for real-time cursor sharing:
-         * - Adds a 'message' event listener to the WebSocket to process messages from the server.
-         * - Adds a 'pointermove' event listener to the document to send the user's cursor position to the server.
-         * - Adds a 'close' event listener to the WebSocket to notify when the connection is closed.
-         */
-        setupEventListeners: async function(){
-          this.socket.addEventListener('message', this.handleReceivedMessage)
-          document.addEventListener('pointermove', this.broadcastCursorPosition)
-          this.socket.addEventListener('close',()=> console.log('You have been disconnected from the server.'))
+        mounted: function () {
+          this.init();
         },
-
-        /**
-         * Creates a JSON stringified message object to be sent over the WebSocket.
-         * @param {string} type - The type of the message (e.g., NEW_MOVEMENT, UPDATE_COORDS, REMOVE_CIRCLE).
-         * @param {Object} data - The data payload to include in the message.
-         * @returns {string} - The JSON stringified message.
-         */
-        createMessage:function(type, data){
-          return JSON.stringify({type,data})
-        },
-
-        /**
-         * Handles incoming messages from the WebSocket server.
-         * Parses the message payload and performs actions based on the message type:
-         * - UPDATE_COORDS: Inserts or updates the cursor position and color for a user.
-         * - REMOVE_CIRCLE: Removes the cursor element for a user who has left.
-         * - Default: Logs unrecognized message types.
-         * @param {MessageEvent} payload - The message event containing data from the server.
-         */
-        handleReceivedMessage(payload) {
-          const msg = JSON.parse(payload.data)
-          const data = msg.data;
-          
-          switch(msg.type){
-            case this.TYPE.UPDATE_COORDS:
-              this.updateCursorPosition(data.id, data.x, data.y, data.cursorColor)
-              break;
-            
-            case this.TYPE.REMOVE_CIRCLE:
-              this.removeCursor(data.id)
-              break;
-            
-            default:
-              console.log('Unrecognized message')
-              break;
-          }
-        },
-
-        /**
-         * Broadcasts the user's current cursor position to the server via WebSocket.
-         * Sends a message of type NEW_MOVEMENT with the adjusted x and y coordinates
-         * only if the WebSocket connection is open.
-         * @param {PointerEvent} e - The pointer event containing the cursor's position.
-         */
-        broadcastCursorPosition(e) {
-          if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return;
-          const payload = this.createMessage(this.TYPE.NEW_MOVEMENT, {
-            x: e.clientX - 12,
-            y: e.clientY - 12
-          })
-          this.socket.send(payload)
-        },
-
-        /**
-         * Inserts and updates a cursor element on the page for a given user.
-         * If the cursor element for the user does not exist, it creates a new div and appends it to the body.
-         * Then, it updates the position and color of the cursor based on the provided data.
-         * @param {Object} data - The cursor data containing id, x, y, and cursorColor.
-         */
-        updateCursorPosition(id, x, y, color) {
-          if (!document.querySelector(`#div-${id}`)) {
-            const div = document.createElement('div');
-            div.classList.add('cursor-div');
-            div.setAttribute('id', `div-${id}`);
-            div.style.position='absolute'
-            div.style.backgroundColor = color;
-            document.querySelector('body').appendChild(div);
-          }
-          // position update
-          document.querySelector(`#div-${id}`).style.top = `${y}px`;
-          document.querySelector(`#div-${id}`).style.left = `${x}px`;
-        },
-
-        /**
-         * Removes the cursor element associated with the given user id from the DOM.
-         * If the cursor element exists, it is removed; otherwise, no action is taken.
-         * @param {string} id - The unique identifier for the user's cursor to remove.
-         */
-        removeCursor(id) {
-          const div = document.querySelector(`#div-${id}`)
-          if (div) div.remove()
-        },
-      
-      },
-      
-      mounted: function(){
-        this.init()
-      }
-    })
+      });
     </script>
   </body>
-  </html>
+</html>
